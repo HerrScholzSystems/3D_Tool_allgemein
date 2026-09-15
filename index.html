@@ -27,7 +27,9 @@
         .modal-input.name { width: 120px; }
         .axis-row { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 6px 0; font-size: 14px; }
         .axis-row input { width: 52px; padding: 6px; border-radius: 5px; border: 1px solid #ccc; text-align: center; }
-        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; display: none; z-index: 1000; }
+        #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 8px 10px 8px 20px; border-radius: 20px; font-size: 14px; display: none; align-items: center; gap: 10px; z-index: 1000; pointer-events: auto; }
+        #toast-cancel { border: none; background: #ff3b30; color: white; font-size: 13px; font-weight: bold; padding: 7px 14px; border-radius: 14px; cursor: pointer; pointer-events: auto; min-height: 30px; }
+        #toast-cancel:active { background: #d9291f; }
 
         .axis-label { font-size: 18px; font-weight: bold; color: #000; pointer-events: none; }
         .tick-label { font-size: 11px; color: #000; font-weight: bold; pointer-events: none; }
@@ -42,7 +44,10 @@
     </style>
 </head>
 <body>
-    <div id="toast">Wähle drei Punkte aus</div>
+    <div id="toast">
+        <span id="toast-text">Wähle drei Punkte aus</span>
+        <button id="toast-cancel" type="button" onclick="cancelSelection()">✕ Abbrechen</button>
+    </div>
 
     <div id="modal-overlay" class="modal-overlay">
         <div class="modal-card">
@@ -394,6 +399,16 @@
             }
         }
 
+        // --- Auswahl abbrechen (Dreieck- und Strecken-Werkzeug) ---
+        window.cancelSelection = () => {
+            selectedPoints.forEach(pt => pt.material.color.set(0x00008b));
+            selectedPoints = [];
+            selectionMode = false;
+            lineMode = false;
+            hideToast();
+            setPanelsCollapsed(false);
+        };
+
         // --- Dreieck-Werkzeug ---
         window.startTriangleSelection = () => { selectionMode = true; lineMode = false; selectedPoints = []; showToast('Wähle drei Punkte aus'); setPanelsCollapsed(true); };
         function handleTriangleSelection(p) {
@@ -401,7 +416,7 @@
             selectedPoints.push(p); p.material.color.set(0x007AFF);
             if (selectedPoints.length === 3) {
                 createTriangle(selectedPoints); selectionMode = false; hideToast();
-                selectedPoints.forEach(pt => pt.material.color.set(0x00008b)); setPanelsCollapsed(false);
+                selectedPoints.forEach(pt => pt.material.color.set(0x00008b)); selectedPoints = []; setPanelsCollapsed(false);
             }
         }
         function createTriangle(pts) {
@@ -440,7 +455,7 @@
             selectedPoints.push(p); p.material.color.set(0x007AFF);
             if (selectedPoints.length === 2) {
                 createLine(selectedPoints[0], selectedPoints[1]); lineMode = false; hideToast();
-                selectedPoints.forEach(pt => pt.material.color.set(0x00008b)); setPanelsCollapsed(false);
+                selectedPoints.forEach(pt => pt.material.color.set(0x00008b)); selectedPoints = []; setPanelsCollapsed(false);
             }
         }
         function createLine(a, b) {
@@ -465,7 +480,7 @@
             else if (a.type === 'del') { pointsGroup.add(a.obj); }
         };
 
-        function showToast(txt) { const t = document.getElementById('toast'); t.textContent = txt; t.style.display = 'block'; }
+        function showToast(txt) { document.getElementById('toast-text').textContent = txt; const t = document.getElementById('toast'); t.style.display = 'flex'; }
         function hideToast() { document.getElementById('toast').style.display = 'none'; }
 
         function addLights() { scene.add(new THREE.AmbientLight(0xffffff, 1.4)); const d = new THREE.DirectionalLight(0xffffff, 0.8); d.position.set(20, 20, 20); scene.add(d); }
